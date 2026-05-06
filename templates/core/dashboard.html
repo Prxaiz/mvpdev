@@ -7,19 +7,62 @@
   <div>
     <h1 class="page-title">{{ business.name }}</h1>
     <p class="muted">{{ business.service }} · {{ business.city }}</p>
-    <p class="muted-small">Public capture page: <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'public_site' business.slug %}">/site/{{ business.slug }}/</a></p>
+    <p class="muted-small squeeze-top">
+      <strong>Booking link:</strong>
+      <span id="booking-url" class="mono-wrap">{{ booking_url }}</span>
+    </p>
+    <div class="btn-row tight-top">
+      <a class="btn primary" href="{% url 'public_site' business.slug %}" target="_blank" rel="noopener">Open live page</a>
+      <button type="button" class="btn" id="copy-booking-url" data-url="{{ booking_url }}">Copy link</button>
+    </div>
+    <p id="copy-hint" class="muted-small copy-hint" hidden>Copied.</p>
   </div>
+  {% if stats.new %}
+  <div class="pulse-card">
+    <span class="eyebrow">Pipeline</span>
+    <strong class="pulse-count">{{ stats.new }}</strong>
+    <span class="muted-small">new {% if stats.new == 1 %}lead needs{% else %}leads need{% endif %} outreach</span>
+  </div>
+  {% endif %}
 </div>
 
-<div class="layout-two">
+<section class="card kpi-strip" aria-label="Lead counts">
+  <div class="kpi">
+    <span class="kpi-label muted-small">Total</span>
+    <span class="kpi-value">{{ stats.total }}</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-label muted-small">New</span>
+    <span class="kpi-value accent">{{ stats.new }}</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-label muted-small">Contacted</span>
+    <span class="kpi-value">{{ stats.contacted }}</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-label muted-small">Closed</span>
+    <span class="kpi-value">{{ stats.closed }}</span>
+  </div>
+</section>
+
+<div class="filter-tabs" role="tablist" aria-label="Lead filters">
+  <a class="filter-tab {% if not lead_filter %}is-active{% endif %}" role="tab" href="{% url 'dashboard' %}">All leads</a>
+  {% for value, label in status_options %}
+  <a class="filter-tab {% if lead_filter == value %}is-active{% endif %}" role="tab" href="{% url 'dashboard' %}?status={{ value }}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<div class="layout-two dash-grid">
   <section class="card stack">
     <h2>Add lead manually</h2>
+    <p class="muted-small nudge-text">Typing in a voicemail or scrape by hand counts—speed beats pretty.</p>
     {% if manual_form.non_field_errors %}
     <div class="error">{{ manual_form.non_field_errors }}</div>
     {% endif %}
     <form method="post" class="stack tight-form">
       {% csrf_token %}
       <input type="hidden" name="action" value="add_lead" />
+      <input type="hidden" name="filter_status" value="{{ lead_filter }}" />
       <label class="label">Name
         {{ manual_form.name }}
         {% if manual_form.name.errors %}<span class="error-inline">{{ manual_form.name.errors.0 }}</span>{% endif %}
@@ -41,18 +84,26 @@
   </section>
 
   <section class="card">
-    <h2>Lead board</h2>
+    <div class="board-head">
+      <h2>Lead board</h2>
+      <span class="muted-small">Showing {{ leads|length }} row{% if leads|length != 1 %}s{% endif %} {% if lead_filter %} · filtered{% endif %}</span>
+    </div>
     {% if not leads %}
-    <p class="muted">No leads yet — add manually or capture from your public page.</p>
+    <div class="empty-board">
+      <p class="muted"><strong>This filter is quiet.</strong> Add a lead on the left or drive traffic to your booking page.</p>
+      <p class="muted-small">Booking link:<br/><span class="mono-wrap">{{ booking_url }}</span></p>
+    </div>
     {% else %}
     <div class="table-wrap">
       <table class="table">
         <thead>
           <tr>
             <th>Name</th>
+            <th>Added</th>
             <th>Contact</th>
             <th>Source</th>
             <th>Status</th>
+            <th class="th-actions"></th>
           </tr>
         </thead>
         <tbody>
@@ -62,9 +113,15 @@
               <strong>{{ lead.name }}</strong>
               {% if lead.notes %}<div class="muted-small">{{ lead.notes }}</div>{% endif %}
             </td>
-            <td>
-              {% if lead.phone %}<span class="muted-small">{{ lead.phone }}</span><br>{% endif %}
-              {% if lead.email %}<span class="muted-small">{{ lead.email }}</span>{% endif %}
+            <td class="cell-tight muted-small">{{ lead.created_at|date:"M j, Y" }} · {{ lead.created_at|date:"g:i A" }}</td>
+            <td class="contact-cell">
+              {% if lead.phone %}
+              <div><a class="contact-chip" href="tel:{{ lead.phone }}">{{ lead.phone }}</a></div>
+              {% endif %}
+              {% if lead.email %}
+              <div><a class="contact-chip" href="mailto:{{ lead.email }}">Email</a></div>
+              {% endif %}
+              {% if not lead.phone and not lead.email %}<span class="muted-small">—</span>{% endif %}
             </td>
             <td><span class="pill">{{ lead.get_source_display }}</span></td>
             <td class="narrow">
@@ -72,11 +129,21 @@
                 {% csrf_token %}
                 <input type="hidden" name="action" value="update_status" />
                 <input type="hidden" name="lead_id" value="{{ lead.pk }}" />
+                <input type="hidden" name="filter_status" value="{{ lead_filter }}" />
                 <select class="select sm" name="lead_status" onchange="this.form.submit()" aria-label="Status for {{ lead.name }}">
                   {% for value, label in status_options %}
                   <option value="{{ value }}" {% if value == lead.status %}selected{% endif %}>{{ label }}</option>
                   {% endfor %}
                 </select>
+              </form>
+            </td>
+            <td class="actions-cell">
+              <form method="post" class="delete-form" onsubmit="return confirm('Delete {{ lead.name|escapejs }}? This cannot be undone.');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_lead" />
+                <input type="hidden" name="lead_id" value="{{ lead.pk }}" />
+                <input type="hidden" name="filter_status" value="{{ lead_filter }}" />
+                <button type="submit" class="btn danger sm btn-blocky">Delete</button>
               </form>
             </td>
           </tr>
@@ -87,4 +154,32 @@
     {% endif %}
   </section>
 </div>
+
+<script>
+  (function () {
+    var btn = document.getElementById("copy-booking-url");
+    var hint = document.getElementById("copy-hint");
+    if (!btn || !hint) return;
+    btn.addEventListener("click", function () {
+      var text = btn.getAttribute("data-url") || "";
+      function show() {
+        hint.hidden = false;
+        hint.textContent = "Copied.";
+        setTimeout(function () {
+          hint.hidden = true;
+        }, 2200);
+      }
+      function fallback() {
+        window.prompt("Copy this URL", text);
+        show();
+      }
+      if (!text) return;
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(show).catch(fallback);
+      } else {
+        fallback();
+      }
+    });
+  })();
+</script>
 {% endblock %}

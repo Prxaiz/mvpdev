@@ -145,6 +145,14 @@ def setup(request: HttpRequest) -> HttpResponse:
     return render(request, "core/setup.html", {"form": form})
 
 
+def _dashboard_redirect(filter_status: str | None = None) -> HttpResponse:
+    allowed = [c.value for c in Lead.Status]
+    url = reverse("dashboard")
+    if filter_status and filter_status in allowed:
+        url = f"{url}?status={filter_status}"
+    return redirect(url)
+
+
 @login_required
 @require_http_methods(["GET", "POST"])
 def dashboard(request: HttpRequest) -> HttpResponse:
@@ -152,11 +160,33 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     if not business:
         return redirect("setup")
 
-    manual_form = ManualLeadForm(prefix="lead")
     allowed_status = [c.value for c in Lead.Status]
+    qs = business.leads.all()
+
+    booking_url = request.build_absolute_uri(reverse("public_site", args=[business.slug]))
+
+    if request.method == "POST":
+        lead_filter = (request.POST.get("filter_status") or "").strip()
+    else:
+        lead_filter = (request.GET.get("status") or "").strip()
+    if lead_filter not in allowed_status:
+        lead_filter = ""
+
+    stats = {
+        "total": qs.count(),
+        "new": qs.filter(status=Lead.Status.NEW).count(),
+        "contacted": qs.filter(status=Lead.Status.CONTACTED).count(),
+        "closed": qs.filter(status=Lead.Status.CLOSED).count(),
+    }
+
+    manual_form = ManualLeadForm(prefix="lead")
 
     if request.method == "POST":
         action = request.POST.get("action")
+
+        post_filter_raw = (request.POST.get("filter_status") or "").strip()
+        post_filter = post_filter_raw if post_filter_raw in allowed_status else ""
+
         if action == "add_lead":
             manual_form = ManualLeadForm(request.POST, prefix="lead")
             if manual_form.is_valid():
@@ -164,8 +194,8 @@ def dashboard(request: HttpRequest) -> HttpResponse:
                 ln.business = business
                 ln.source = Lead.Source.MANUAL
                 ln.save()
-                messages.success(request, "Lead saved.")
-                return redirect("dashboard")
+                messages.success(request, "Lead saved — follow up fast while you're top of mind.")
+                return _dashboard_redirect(post_filter)
         elif action == "update_status":
             lid = request.POST.get("lead_id")
             ns = request.POST.get("lead_status") or ""
@@ -174,10 +204,24 @@ def dashboard(request: HttpRequest) -> HttpResponse:
                 lead.status = ns
                 lead.save(update_fields=["status"])
                 messages.success(request, "Status updated.")
-                return redirect("dashboard")
+                return _dashboard_redirect(post_filter)
             messages.error(request, "Could not update status.")
+        elif action == "delete_lead":
+            lid = request.POST.get("lead_id")
+            if lid:
+                lead = get_object_or_404(Lead, pk=lid, business=business)
+                lead.delete()
+                messages.success(request, "Lead deleted.")
+                return _dashboard_redirect(post_filter)
+            messages.error(request, "Couldn't delete lead.")
 
-    leads_qs = business.leads.all()[:500]
+        lead_filter = post_filter
+
+    leads_qs = business.leads.order_by("-created_at")
+    if lead_filter:
+        leads_qs = leads_qs.filter(status=lead_filter)
+
+    leads_qs = leads_qs[:500]
     return render(
         request,
         "core/dashboard.html",
@@ -186,6 +230,9 @@ def dashboard(request: HttpRequest) -> HttpResponse:
             "manual_form": manual_form,
             "leads": leads_qs,
             "status_options": Lead.Status.choices,
+            "lead_filter": lead_filter,
+            "stats": stats,
+            "booking_url": booking_url,
         },
     )
 
