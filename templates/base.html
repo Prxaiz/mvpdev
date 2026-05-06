@@ -1,8 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+    (function () {
+      try {
+        var k = "ui-theme";
+        var v = localStorage.getItem(k);
+        var t =
+          v === "light" || v === "dark"
+            ? v
+            : window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+        document.documentElement.dataset.theme = t;
+      } catch (e) {
+        document.documentElement.dataset.theme = "light";
+      }
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
   {% block meta %}{% endblock %}
   <title>{% block title %}MVP{% endblock %}</title>
   {% load static %}
@@ -10,26 +28,28 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="inner">
+    <div class="inner topbar-inner">
       <a class="brand" href="{% url 'home' %}">Client Engine</a>
-      {% if not user.is_authenticated %}
-      <nav class="nav-links">
-        <a href="{% url 'login' %}">Sign in</a>
-        <a href="{% url 'signup' %}">Sign up</a>
-      </nav>
-      {% endif %}
-      {% if user.is_authenticated %}
-      <nav class="nav-links">
-        <span class="nav-user muted-small">{{ user.username }}</span>
-        <a href="{% url 'dashboard' %}">Dashboard</a>
-        <a href="{% url 'content_tool' %}">Content</a>
-        <a href="{% url 'website_tool' %}">Website</a>
-        <form action="{% url 'logout' %}" method="post" class="inline-form">
-          {% csrf_token %}
-          <button type="submit" class="btn-link">Logout</button>
-        </form>
-      </nav>
-      {% endif %}
+      <div class="topbar-actions">
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-live="polite">
+          Dark
+        </button>
+        <nav class="nav-links">
+          {% if not user.is_authenticated %}
+            <a href="{% url 'login' %}">Sign in</a>
+            <a href="{% url 'signup' %}">Sign up</a>
+          {% else %}
+            <span class="nav-user muted-small">{{ user.username }}</span>
+            <a href="{% url 'dashboard' %}">Dashboard</a>
+            <a href="{% url 'content_tool' %}">Content</a>
+            <a href="{% url 'website_tool' %}">Website</a>
+            <form action="{% url 'logout' %}" method="post" class="inline-form">
+              {% csrf_token %}
+              <button type="submit" class="btn-link">Logout</button>
+            </form>
+          {% endif %}
+        </nav>
+      </div>
     </div>
   </header>
   {% if messages %}
@@ -42,5 +62,6 @@
   <main class="main inner">
     {% block content %}{% endblock %}
   </main>
+  <script src="{% static 'theme.js' %}" defer></script>
 </body>
 </html>
