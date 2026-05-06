@@ -369,3 +369,7 @@ textarea {
 .center.muted {
   text-align: center;
 }
+
+.hero-marketing .lead {
+  max-width: 640px;
+}

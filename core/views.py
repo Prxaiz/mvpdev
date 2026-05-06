@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
-from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
+from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
@@ -21,6 +21,7 @@ from .services.ai import (
     ai_website_bundle,
     fallback_website_copy,
 )
+from .services.notify import notify_new_web_lead
 
 
 def primary_business(user):
@@ -28,9 +29,13 @@ def primary_business(user):
 
 
 def home(request: HttpRequest) -> HttpResponse:
-    if not request.user.is_authenticated:
-        return redirect("login")
-    return redirect("dashboard")
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+    return render(request, "core/landing.html")
+
+
+def health(_request: HttpRequest) -> JsonResponse:
+    return JsonResponse({"status": "ok"})
 
 
 @require_http_methods(["GET", "POST"])
@@ -306,6 +311,7 @@ def public_lead_capture(request: HttpRequest, slug: str) -> HttpResponse:
         lead.source = Lead.Source.WEB_FORM
         lead.status = Lead.Status.NEW
         lead.save()
+        notify_new_web_lead(lead)
         messages.success(request, "Thanks — we'll be in touch soon.")
         return redirect("public_site", slug=business.slug)
     messages.error(request, "Please fix the highlighted fields.")
