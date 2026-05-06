@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Client Engine — local lead + content MVP{% endblock %}
+
+{% block content %}
+<section class="hero-marketing">
+  <p class="eyebrow">MVP</p>
+  <h1 class="page-title">Turn on a simple lead + content engine for local service businesses.</h1>
+  <p class="muted lead">
+    Sign up, add your business once, and get a working dashboard, AI drafts, a one-page capture site, and manual lead entry so you can sell before you automate.
+  </p>
+  <div class="btn-row">
+    <a class="btn primary" href="{% url 'signup' %}">Create your engine</a>
+    <a class="btn" href="{% url 'login' %}">Sign in</a>
+  </div>
+</section>
+{% endblock %}

@@ -12,6 +12,12 @@
   <header class="topbar">
     <div class="inner">
       <a class="brand" href="{% url 'home' %}">Client Engine</a>
+      {% if not user.is_authenticated %}
+      <nav class="nav-links">
+        <a href="{% url 'login' %}">Sign in</a>
+        <a href="{% url 'signup' %}">Sign up</a>
+      </nav>
+      {% endif %}
       {% if user.is_authenticated %}
       <nav class="nav-links">
         <span class="nav-user muted-small">{{ user.username }}</span>
