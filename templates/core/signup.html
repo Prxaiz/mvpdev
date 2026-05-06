@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Sign up — Client Engine{% endblock %}
+
+{% block content %}
+<section class="auth-card">
+  <h1 class="page-title">Create account</h1>
+  {% if form.non_field_errors %}
+  <div class="error">{{ form.non_field_errors }}</div>
+  {% endif %}
+  <form method="post" class="stack">
+    {% csrf_token %}
+    <label class="label">Username
+      {{ form.username }}
+      {% if form.username.errors %}<span class="error-inline">{{ form.username.errors.0 }}</span>{% endif %}
+    </label>
+    <label class="label">Password
+      {{ form.password1 }}
+      {% if form.password1.errors %}<span class="error-inline">{{ form.password1.errors.0 }}</span>{% endif %}
+    </label>
+    <label class="label">Password (again)
+      {{ form.password2 }}
+      {% if form.password2.errors %}<span class="error-inline">{{ form.password2.errors.0 }}</span>{% endif %}
+    </label>
+    <button class="btn primary" type="submit">Create your engine</button>
+  </form>
+  <p class="muted-small">Already have login? <a href="{% url 'login' %}">Sign in</a></p>
+</section>
+{% endblock %}

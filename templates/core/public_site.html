@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block meta %}
+<meta name="description" content="{{ meta_description }}" />
+<meta property="og:title" content="{{ hero_title }}" />
+{% endblock %}
+
+{% block title %}{{ hero_title }}{% endblock %}
+
+{% block content %}
+<section class="lp-hero">
+  <span class="eyebrow">{{ business.service }} · {{ business.city }}</span>
+  <h1 class="lp-title">{{ hero_title }}</h1>
+  <p class="lead">{{ hero_subtitle }}</p>
+  <div class="lp-cta">
+    <a class="btn primary" href="#contact">Get a quote</a>
+    <span class="muted-small">Prefer text? Mention your ZIP and what you need below.</span>
+  </div>
+</section>
+
+<section class="card lp-section">
+  <h2>Services</h2>
+  <div class="pre-soft">{{ services_text }}</div>
+</section>
+
+<section class="card lp-section muted-bg">
+  <h2>What neighbors say</h2>
+  <div class="pre-soft">{{ testimonials_text }}</div>
+</section>
+
+<section class="card lp-section" id="contact">
+  <h2>Request service</h2>
+  <p class="muted">We reply fast during business hours. No fluff — leave your best contact.</p>
+  {% if form.non_field_errors %}
+  <div class="error">{{ form.non_field_errors }}</div>
+  {% endif %}
+  <form method="post" action="{% url 'public_lead_capture' business.slug %}" class="stack lp-form">
+    {% csrf_token %}
+    <label class="label">Name <span class="req">*</span>
+      {{ form.name }}
+      {% if form.name.errors %}<span class="error-inline">{{ form.name.errors.0 }}</span>{% endif %}
+    </label>
+    <label class="label">Phone
+      {{ form.phone }}
+      {% if form.phone.errors %}<span class="error-inline">{{ form.phone.errors.0 }}</span>{% endif %}
+    </label>
+    <label class="label">Email
+      {{ form.email }}
+      {% if form.email.errors %}<span class="error-inline">{{ form.email.errors.0 }}</span>{% endif %}
+    </label>
+    <label class="label">Tell us briefly
+      {{ form.notes }}
+    </label>
+    <button class="btn primary" type="submit">Send info</button>
+  </form>
+</section>
+
+<p class="muted-small center muted">Powered by Client Engine MVP</p>
+{% endblock %}

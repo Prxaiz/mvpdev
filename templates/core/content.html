@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Content — {{ business.name }}{% endblock %}
+
+{% block content %}
+<section class="stack">
+  <h1 class="page-title">AI content</h1>
+  <p class="muted">{{ business.service }} · {{ business.city }}. Each click drafts copy and saves a version below.</p>
+  <div class="btn-row">
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="generate_kind" value="facebook" />
+      <button class="btn" type="submit">Generate 3 Facebook posts</button>
+    </form>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="generate_kind" value="google" />
+      <button class="btn" type="submit">Write a Google Business update</button>
+    </form>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="generate_kind" value="ad" />
+      <button class="btn" type="submit">Create a short ad</button>
+    </form>
+  </div>
+
+  {% if items %}
+  <section class="card stack">
+    <h2>Saved drafts</h2>
+    {% for item in items %}
+    <details class="draft" {% if forloop.first %}open{% endif %}>
+      <summary><span class="pill">{{ item.get_kind_display }}</span> · {{ item.created_at|date:"M j, Y g:i A" }}</summary>
+      <pre class="pre">{{ item.body }}</pre>
+    </details>
+    {% endfor %}
+  </section>
+  {% endif %}
+</section>
+{% endblock %}

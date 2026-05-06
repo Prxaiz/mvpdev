@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  {% block meta %}{% endblock %}
+  <title>{% block title %}MVP{% endblock %}</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'app.css' %}" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="inner">
+      <a class="brand" href="{% url 'home' %}">Client Engine</a>
+      {% if user.is_authenticated %}
+      <nav class="nav-links">
+        <span class="nav-user muted-small">{{ user.username }}</span>
+        <a href="{% url 'dashboard' %}">Dashboard</a>
+        <a href="{% url 'content_tool' %}">Content</a>
+        <a href="{% url 'website_tool' %}">Website</a>
+        <form action="{% url 'logout' %}" method="post" class="inline-form">
+          {% csrf_token %}
+          <button type="submit" class="btn-link">Logout</button>
+        </form>
+      </nav>
+      {% endif %}
+    </div>
+  </header>
+  {% if messages %}
+  <div class="flash-wrap inner">
+    {% for message in messages %}
+    <div class="flash">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <main class="main inner">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Business setup — Client Engine{% endblock %}
+
+{% block content %}
+<section class="stack tight">
+  <h1 class="page-title">Set up your business</h1>
+  <p class="muted">
+    We’ll generate your landing page draft, starter social posts, and <strong>sample leads</strong> so the dashboard feels real on day one.
+  </p>
+  <div class="card">
+    <form method="post" class="stack">
+      {% csrf_token %}
+      <label class="label">Business name
+        {{ form.name }}
+      </label>
+      <label class="label">Service you sell
+        {{ form.service }}
+      </label>
+      <label class="label">City / area served
+        {{ form.city }}
+      </label>
+      <button type="submit" class="btn primary">Generate my starter kit</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

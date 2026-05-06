@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — {{ business.name }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">{{ business.name }}</h1>
+    <p class="muted">{{ business.service }} · {{ business.city }}</p>
+    <p class="muted-small">Public capture page: <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'public_site' business.slug %}">/site/{{ business.slug }}/</a></p>
+  </div>
+</div>
+
+<div class="layout-two">
+  <section class="card stack">
+    <h2>Add lead manually</h2>
+    {% if manual_form.non_field_errors %}
+    <div class="error">{{ manual_form.non_field_errors }}</div>
+    {% endif %}
+    <form method="post" class="stack tight-form">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_lead" />
+      <label class="label">Name
+        {{ manual_form.name }}
+        {% if manual_form.name.errors %}<span class="error-inline">{{ manual_form.name.errors.0 }}</span>{% endif %}
+      </label>
+      <label class="label">Phone
+        {{ manual_form.phone }}
+      </label>
+      <label class="label">Email
+        {{ manual_form.email }}
+      </label>
+      <label class="label">Notes
+        {{ manual_form.notes }}
+      </label>
+      <label class="label">Status
+        {{ manual_form.status }}
+      </label>
+      <button type="submit" class="btn primary">Save lead</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Lead board</h2>
+    {% if not leads %}
+    <p class="muted">No leads yet — add manually or capture from your public page.</p>
+    {% else %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Contact</th>
+            <th>Source</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lead in leads %}
+          <tr>
+            <td>
+              <strong>{{ lead.name }}</strong>
+              {% if lead.notes %}<div class="muted-small">{{ lead.notes }}</div>{% endif %}
+            </td>
+            <td>
+              {% if lead.phone %}<span class="muted-small">{{ lead.phone }}</span><br>{% endif %}
+              {% if lead.email %}<span class="muted-small">{{ lead.email }}</span>{% endif %}
+            </td>
+            <td><span class="pill">{{ lead.get_source_display }}</span></td>
+            <td class="narrow">
+              <form method="post" class="inline-row">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_status" />
+                <input type="hidden" name="lead_id" value="{{ lead.pk }}" />
+                <select class="select sm" name="lead_status" onchange="this.form.submit()" aria-label="Status for {{ lead.name }}">
+                  {% for value, label in status_options %}
+                  <option value="{{ value }}" {% if value == lead.status %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

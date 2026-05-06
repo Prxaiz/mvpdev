@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Website — {{ business.name }}{% endblock %}
+
+{% block content %}
+<section class="stack">
+  <h1 class="page-title">Landing page generator</h1>
+  <p class="muted">Conversion-first one-pager served at:</p>
+  <div class="callout">{{ public_absolute }}</div>
+  <div class="btn-row">
+    <a class="btn" href="{{ public_path }}" target="_blank" rel="noopener">Preview live site</a>
+    <form method="post">
+      {% csrf_token %}
+      <button class="btn primary" type="submit">Regenerate copy with AI</button>
+    </form>
+  </div>
+
+  <div class="layout-two mt">
+    <div class="card stack">
+      <h2>Landing overview</h2>
+      {% if website.generated_at %}
+      <p class="muted-small">Last generated {{ website.generated_at|date:"M j, Y g:i A" }}</p>
+      {% else %}
+      <p class="muted-small">Starter copy loaded — regenerate when ready.</p>
+      {% endif %}
+      <dl class="dl-stack">
+        <dt>Hero title</dt><dd>{{ website.hero_title }}</dd>
+        <dt>Subtitle</dt><dd class="pre-soft">{{ website.hero_subtitle }}</dd>
+      </dl>
+    </div>
+    <div class="card stack">
+      <h2>Services section</h2>
+      <pre class="pre">{{ website.services_text }}</pre>
+      <h2>Testimonials</h2>
+      <pre class="pre">{{ website.testimonials_text }}</pre>
+    </div>
+  </div>
+</section>
+{% endblock %}
